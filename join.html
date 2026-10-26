@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rejoindre une ligue · Pronix</title>
+  <meta name="description" content="Rejoins une ligue Pronix : paris entre potes, 100 % gratuit." />
+  <meta name="theme-color" content="#0F1218" />
+  <style>
+    :root { --bg: #0F1218; --card: #161A24; --border: #232838; --text: #F2F4F8; --muted: #8B93A7; --accent: #C6F432; --on-accent: #0D1105; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    main { min-height: 100svh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 16px; text-align: center; }
+    .logo { width: 56px; height: 56px; border-radius: 16px; background: var(--accent); color: var(--on-accent); font-weight: 900; font-size: 32px; display: grid; place-items: center; transform: rotate(-6deg); }
+    h1 { font-size: 26px; margin: 18px 0 4px; letter-spacing: -0.02em; }
+    p { color: var(--muted); font-size: 15px; line-height: 1.45; margin: 6px 0; max-width: 420px; }
+    .code { margin: 22px 0 8px; padding: 16px 28px; border: 2px dashed var(--accent); border-radius: 18px; color: var(--accent); font-weight: 900; font-size: 32px; letter-spacing: 0.18em; font-variant-numeric: tabular-nums; }
+    .btn { display: inline-block; width: 100%; max-width: 360px; margin-top: 10px; padding: 16px; border-radius: 16px; font-weight: 800; font-size: 16px; text-decoration: none; cursor: pointer; border: 1.5px solid transparent; }
+    .primary { background: var(--accent); color: var(--on-accent); }
+    .outline { background: transparent; color: var(--text); border-color: #3B4254; }
+    .hint { font-size: 13px; margin-top: 18px; }
+    .hidden { display: none; }
+    #copied { color: #5BE38B; font-weight: 600; min-height: 20px; margin-top: 8px; }
+    footer { margin-top: 3em; font-size: 0.9em; color: var(--muted); text-align: center; padding: 0 16px 32px; }
+    footer nav a { margin-right: 12px; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo">P</div>
+    <h1>Pronix</h1>
+    <p>Paris entre potes · 100 % gratuit · 0 €</p>
+
+    <div id="with-code">
+      <p>Tu es invité·e à rejoindre une ligue. Ton code d'invitation :</p>
+      <div class="code" id="code">······</div>
+      <div id="copied"></div>
+      <a class="btn primary" id="open-app" href="#">Ouvrir dans Pronix</a>
+      <a class="btn outline" id="store" href="#">Installer l'app</a>
+      <button class="btn outline" id="copy" type="button">Copier le code</button>
+      <p class="hint">Si l'app ne s'ouvre pas, installe-la puis saisis ce code dans « J'ai un code ».</p>
+    </div>
+
+    <div id="without-code" class="hidden">
+      <p>Ce lien ne contient pas de code d'invitation. Demande le code à la personne qui t'invite, puis saisis-le dans l'app.</p>
+      <a class="btn outline" id="store-nocode" href="#">Installer Pronix</a>
+    </div>
+  </main>
+  <footer>
+    <p>Pronix, application de pronostics entre amis à crédits virtuels. Aucun jeu d'argent réel.</p>
+    <nav>
+      <a href="index.html">Politique de confidentialité</a>
+      <a href="cgu.html">Conditions d'utilisation</a>
+      <a href="support.html">Assistance</a>
+      <a href="suppression-compte.html">Suppression de compte</a>
+    </nav>
+  </footer>
+
+  <script>
+    (function () {
+      // --- À renseigner quand les fiches existent (placeholders) ----------------------------------
+      var TESTFLIGHT_URL = 'https://testflight.apple.com/join/XXXXXXXX';       // puis App Store : https://apps.apple.com/app/idXXXXXXXXX
+      var PLAY_URL = 'https://play.google.com/store/apps/details?id=com.julesmarques.banco';
+      var SCHEME = 'banco';
+      // --------------------------------------------------------------------------------------------
+
+      var params = new URLSearchParams(location.search);
+      var raw = params.get('code') || (location.pathname.match(/\/join\/([A-Za-z0-9]{6})/) || [])[1] || '';
+      var code = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+      var ua = navigator.userAgent || '';
+      var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var isAndroid = /Android/i.test(ua);
+      var storeUrl = isIOS ? TESTFLIGHT_URL : PLAY_URL;
+
+      var storeLinks = document.querySelectorAll('#store, #store-nocode');
+      for (var i = 0; i < storeLinks.length; i++) storeLinks[i].href = storeUrl;
+
+      if (code.length !== 6) {
+        document.getElementById('with-code').classList.add('hidden');
+        document.getElementById('without-code').classList.remove('hidden');
+        return;
+      }
+
+      var deepLink = SCHEME + '://join/' + code;
+      document.getElementById('code').textContent = code.slice(0, 3) + '-' + code.slice(3);
+      document.getElementById('open-app').href = deepLink;
+
+      document.getElementById('copy').addEventListener('click', function () {
+        var done = function () { document.getElementById('copied').textContent = 'Code copié !'; };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, done);
+        else done();
+      });
+
+      // Mobile : on tente l'app tout de suite ; si la page est toujours visible 1,5 s plus tard, l'app n'est pas
+      // installée → store. (Un universal / app link bien configuré ouvre l'app sans même charger cette page.)
+      if (isIOS || isAndroid) {
+        var left = false;
+        var onHide = function () { left = true; };
+        document.addEventListener('visibilitychange', function () { if (document.hidden) onHide(); });
+        window.addEventListener('pagehide', onHide);
+        window.addEventListener('blur', onHide);
+        setTimeout(function () { location.href = deepLink; }, 50);
+        setTimeout(function () { if (!left && !document.hidden) location.href = storeUrl; }, 1500);
+      }
+    })();
+  </script>
+</body>
+</html>
